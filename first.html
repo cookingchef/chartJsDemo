@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Chart</title>
+</head>
+<body>
+    <h1>This is the chart</h1>
+    <canvas id="weatherChart"></canvas>
+    <div id="infoDiv"></div>
+
+    <script>
+        // Get the canvas element
+        const canvas = document.getElementById('weatherChart');
+
+        // Create the chart context
+        const ctx = canvas.getContext('2d');
+
+        // Data for the histogram
+        const data = {
+          labels: ['January', 'February', 'March', 'April', 'May'],
+          datasets: [
+            {
+              label: 'Temperature',
+              data: [10, 15, 12, 18, 20],
+              backgroundColor: 'rgba(75, 192, 192, 0.5)', // Default color for bars
+            },
+          ],
+        };
+
+        // Configuration options for the chart
+        const options = {
+          responsive: true,
+          scales: {
+            x: {
+              beginAtZero: true,
+            },
+            y: {
+              beginAtZero: true,
+            },
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                title: (tooltipItem) => {
+                  // Display the label of the clicked bar
+                  return `Month: ${tooltipItem[0].label}`;
+                },
+                label: (tooltipItem) => {
+                  // Display the value of the clicked bar
+                  return `Temperature: ${tooltipItem.formattedValue}`;
+                },
+              },
+            },
+          },
+        };
+
+        // Create the chart instance
+        const weatherChart = new Chart(ctx, {
+          type: 'bar',
+          data: data,
+          options: options,
+        });
+
+ // Handle click event on the chart
+canvas.addEventListener('click', (event) => {
+  const activePoints = weatherChart.getElementsAtEventForMode(event, 'index', { intersect: true });
+
+  if (activePoints.length > 0) {
+    const clickedIndex = activePoints[0].index;
+
+    // Change the color of the clicked bar to black
+    weatherChart.data.datasets[0].backgroundColor[clickedIndex] = 'green';
+
+    // Update the chart to reflect the color change
+    weatherChart.update();
+
+    // Display information and submit butt
+    const clickedLabel = weatherChart.data.labels[clickedIndex];
+    const clickedValue = weatherChart.data.datasets[0].data[clickedIndex];
+
+    const infoDiv = document.getElementById('infoDiv');
+    infoDiv.innerHTML = `
+      <p> <h3>Clicked Bar Details</h3><br> Name: ${clickedLabel}</p>
+      <p>Temperature: ${clickedValue}</p>
+      <button onclick="submitToServer('${clickedLabel}', ${clickedValue})">Submit to Server</button>
+    `;
+  }
+});
+
+
+        // Function to handle the submit button click and send data to the server
+        function submitToServer(clickedLabel, clickedValue) {
+          // Create the HTTP request object
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/submit', true); // Replace '/submit' with the appropriate server endpoint
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+              console.log('Data submitted to the server.');
+            }
+          };
+
+          // Prepare the data to send
+          const dataToSend = {
+            label: clickedLabel,
+            value: clickedValue,
+          };
+
+          // Convert data to JSON and send the request
+          xhr.send(JSON.stringify(dataToSend));
+        }
+    </script>
+</body>
+</html>
